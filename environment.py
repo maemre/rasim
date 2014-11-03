@@ -5,6 +5,9 @@ class Environment():
         self.channels = channels
         self.traffics = traffics
 
+    def set_agents(self, agents):
+        self.agents = agents
+
     def next_slot(self):
         for c in self.channels:
             c.iterate()

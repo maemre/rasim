@@ -6,4 +6,4 @@ class SimpleTraffic():
 
     def traffic_exists(self):
         '''Generate traffic with probability p_traffic'''
-        return rand() <= p_traffic
+        return rand() <= self.p_traffic
