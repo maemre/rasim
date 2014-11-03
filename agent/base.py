@@ -15,11 +15,11 @@ class BaseAgent():
         self.chan, self.b = s0['state']
 
     @abstractmethod
-    def act(self, state):
+    def act(self):
         '''Return an action for current state.'''
         pass
 
-    def move(self, state):
+    def move(self):
         '''Make random walk in 2-d space with constant-speed jumps. Return the move'''
         phi = random.uniform(0, 2*pi)
         move = speed*cos(phi), speed*sin(phi)
