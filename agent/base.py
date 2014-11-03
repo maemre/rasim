@@ -14,7 +14,7 @@ class BaseAgent():
         self.env = env
         self.chan, self.b = s0['state']
 
-    @abstractmethod
+    @abc.abstractmethod
     def act(self):
         '''Return an action for current state.'''
         pass

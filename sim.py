@@ -22,12 +22,18 @@ N_channel = 10
 r_init = 50
 # number of buffer slots
 B = 50
+# sensing time
+T_sense = 0.01
+# time slot
+T_slot = 0.1
+# transmission time
+T_tx = T_slot - T_sense
 
 # generate channel-related stuff
 channels = [SimpleChannel() for i in xrange(N_channel)]
 traffics = [SimpleTraffic() for i in xrange(N_channel)]
 
-env = Environment(channels, traffics)
+env = Environment(channels, traffics, pd=0.9, pf=0.1)
 
 def init_state():
     # disk point picking - http://mathworld.wolfram.com/DiskPointPicking.html
@@ -36,11 +42,12 @@ def init_state():
     return {'state': (random.randint(0, N_channel), random.randint(0, B)), 'x': r*cos(theta), 'y':r*sin(theta)}
 
 # generate agents
-agents = [BestChannel(env, init_state()) for i in xrange(N_agent)]
+agents = [BestChannel(env, init_state(), 0.1, 1e3) for i in xrange(N_agent)]
 env.set_agents(agents)
 
 for n_run in xrange(N_runs):
     print "Run #%d" % n_run
+    rates = [0,0,0]
     for t in xrange(t_total):
         env.next_slot()
         # get actions
@@ -64,5 +71,21 @@ for n_run in xrange(N_runs):
                     # no collision *yet*
                     collisions[a['channel']] = i
         
+        # For each agent compute transmission successes and report
+        # transmission success/failure to agent
         for i, a in enumerate(agents):
-            a.feedback(collision=collisions[i])
+            # if collision occurred, report collusion
+            if collided[i]:
+                a.feedback(collision=True, success=False)
+                rates[0] += 1
+                continue
+            act = actions[i]            
+            ch = env.channels[act['channel']]
+            # no collision, check transmission success by channel quality
+            if ch.transmission_success(act['power'], T_tx, act['bits']):
+                a.feedback(collision=False, success=True)
+                rates[1] += 1
+            else:
+                a.feedback(collision=False, success=False)
+                rates[2] += 1
+    print "Collisions: %d, Successes: %d, Failures: %d" % tuple(rates)
