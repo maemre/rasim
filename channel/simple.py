@@ -1,26 +1,33 @@
 from numpy.random import rand
-from scipy.special import erfc
-from numpy import sqrt
+from numpy import sqrt, exp, pi
+import params
 
 class SimpleChannel():
-    def __init__(self, p_bad=0.2, good_noise=0.01, bad_noise=0.01):
+    def __init__(self, freq, p_bad=0.2, good_noise=params.noise['good'], bad_noise=params.noise['bad']):
+        # channel frequency
+        self.freq = freq
         self.p_bad = p_bad
-        self.good_noise = good_noise
-        self.bad_noise = bad_noise
+        # convert noise from dBm to W
+        self.good_noise = 10 ** ((good_noise - 30) / 10)
+        self.bad_noise = 10 ** ((bad_noise - 30) / 10)
 
     def iterate(self):
         p1 = rand()
         self.is_bad = p1 <= self.p_bad
 
-    def transmission_success(self, power, t, data_size):
+    def transmission_success(self, power, t, data_size, x, y):
         '''Does the transmission succeed?
         Arguments:
         power : Transmission power
         t : transmission time
         data_size : Size of data to be transmitted in bits'''
         p2 = rand()
+        # apply Friis transmission eqn to get received power
+        c = 3e8 # speed of light
+        d = sqrt(x ** 2 + y ** 2) # distance to BS
+        p_r = power * (c / (4 * pi * d * self.freq))
         # energy per bit
-        E_b = power * t / data_size
+        E_b = p_r * t / data_size
         success_rate = (1 - self.berawgn(E_b)) ** data_size
         
         return p2 <= success_rate
@@ -31,8 +38,8 @@ class SimpleChannel():
     
     def berawgn(self, E_b):
         '''Get BER of channel by calculationg SNR. Assuming we're using
-        BPSK with AWGN.
+        DBPSK with AWGN.
         Arguments:
         E_b : Energy per bit'''
         N_0 = self.noise()
-        return 0.5 * erfc(sqrt(E_b / N_0))
+        return 0.5 * exp(-(E_b / N_0))

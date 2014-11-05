@@ -4,6 +4,8 @@ class Environment():
     def __init__(self, channels, traffics, pd, pf):
         self.channels = channels
         self.traffics = traffics
+        self.pd = pd
+        self.pf = pf
 
     def set_agents(self, agents):
         self.agents = agents
@@ -18,6 +20,6 @@ class Environment():
         p = rand()
 
         if self.t_state[chan]:
-            return p < pd
+            return p < self.pd
         else:
-            return p < pf
+            return p < self.pf
