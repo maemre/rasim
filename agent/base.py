@@ -24,7 +24,7 @@ class BaseAgent():
     def fill_buffer(self):
         pkgs = random.randint(params.pkg_min, params.pkg_max+1)
         if pkgs > self.B_empty:
-            print "Buffer overflow at agent ", self.id
+            #print "Buffer overflow at agent ", self.id
             self.buf_overflow = True
         else:
             self.buf_overflow = False            
@@ -60,22 +60,24 @@ class BaseAgent():
     def switch(self, chan):
         if self.t_remaining < params.t_sw * abs(chan - self.chan):
             raise Exception('No time remained for switching from chan #%d to chan #%d' % (self.chan, chan))
-        self.E_slot += abs(chan - self.chan) * params.t_sw *params.P_sw
+        self.E_slot += abs(chan - self.chan) * params.t_sw * params.P_sw
+        self.t_remaining -= params.t_sw * abs(chan - self.chan)   
         self.chan = chan
     
-    def transmit(self, P_tx, n_pkg, bitrate):
+    def transmit(self, P_tx, n_pkg):
         self.n_pkg_slot = n_pkg
         n_bits = n_pkg * params.pkg_size
-        if self.t_remaining < n_bits / bitrate:
+        if self.t_remaining < n_bits / params.bitrate:
             raise Exception('No time remained for transmitting %d bits with bitrate %f' % (n_bits, bitrate))
-        self.t_remaining -= n_bits / bitrate
-        self.E_slot += P_tx * n_bits / bitrate
+        self.t_remaining -= n_bits / params.bitrate
+        self.E_slot += P_tx * n_bits / params.bitrate
         return {
             'action': 'transmit',
             'channel': self.chan,
-            'power': self.P_tx,
-            'bits': n_bits,
-            'bitrate': bitrate
+            'power': P_tx,
+            'pkt_size': params.pkg_size,
+            'n_pkt': n_pkg,
+            'bitrate': params.bitrate
         }
     
     def idle(self):
@@ -85,6 +87,18 @@ class BaseAgent():
             'action': 'idle'        
         }
         
-    def feedback(self, collision, success):
+    def feedback(self, collision, success, idle=False):
+        if idle:
+            return
         if success:
-            self.B_empty -= self.n_pkg_slot
+            self.B_empty += 1
+        if self.B_empty > self.B:
+            self.B_empty = self.B
+    
+    def act_then_idle(self):
+        a = self.act()
+        self.idle()
+        return a
+    
+    def calculate_bitrate(self, P_tx, ch):
+        return params.chan_bw * log2(1 + P_tx / self.env.channels[ch].noise())

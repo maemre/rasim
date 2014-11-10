@@ -1,45 +1,48 @@
 from numpy.random import rand
-from numpy import sqrt, exp, pi
+from numpy import sqrt, exp, pi, log1p, log
 import params
+from util import *
+
+c = 3e8 # speed of light
 
 class SimpleChannel():
-    def __init__(self, freq, p_bad=0.2, good_noise=params.noise['good'], bad_noise=params.noise['bad']):
+    def __init__(self, freq, transition_probs, good_noise, bad_noise):
         # channel frequency
         self.freq = freq
-        self.p_bad = p_bad
         # convert noise from dBm to W
-        self.good_noise = 10 ** ((good_noise - 30) / 10)
-        self.bad_noise = 10 ** ((bad_noise - 30) / 10)
-
+        self.good_noise = to_watt(good_noise)
+        self.bad_noise = to_watt(bad_noise)
+        # set transition probabilities, first state is good state
+        self.A = transition_probs
+        self.is_bad = rand() <= 0.5 # priors are uniform
+        
     def iterate(self):
-        p1 = rand()
-        self.is_bad = p1 <= self.p_bad
+        self.is_bad = rand() <= self.A[1,1] if self.is_bad else self.A[0,1]
 
-    def transmission_success(self, power, t, data_size, x, y):
-        '''Does the transmission succeed?
+    def transmission_successes(self, power, bitrate, pkt_size, n_pkt, x, y):
+        '''How many packets have been successfully transmitted?
         Arguments:
         power : Transmission power
         t : transmission time
         data_size : Size of data to be transmitted in bits'''
-        p2 = rand()
         # apply Friis transmission eqn to get received power
-        c = 3e8 # speed of light
         d = sqrt(x ** 2 + y ** 2) # distance to BS
-        p_r = power * (c / (4 * pi * d * self.freq))
+        P_r = power * (c / (4 * pi * d * self.freq))
         # energy per bit
-        E_b = p_r * t / data_size
-        success_rate = (1 - self.berawgn(E_b)) ** data_size
+        t = n_pkt * pkt_size / bitrate
+        E_b = P_r * t / pkt_size
+        success_rate = exp(log1p(-self.berawgn(E_b)) * pkt_size)
         
-        return p2 <= success_rate
+        return (rand(n_pkt) <= success_rate).sum()
     
     def noise(self):
         '''Return noise power spectral density.'''
-        return self.good_noise if self.is_bad else self.bad_noise
+        return (self.bad_noise if self.is_bad else self.good_noise) * params.chan_bw
     
     def berawgn(self, E_b):
         '''Get BER of channel by calculationg SNR. Assuming we're using
         DBPSK with AWGN.
         Arguments:
         E_b : Energy per bit'''
-        N_0 = self.noise()
+        N_0 = self.bad_noise if self.is_bad else self.good_noise  # self.noise()
         return 0.5 * exp(-(E_b / N_0))

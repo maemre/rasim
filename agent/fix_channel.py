@@ -6,21 +6,29 @@ Created on Wed Nov  5 01:18:59 2014
 """
 
 from .base import BaseAgent
-from numpy import random
+from numpy import ceil, random
 import params
 
-class RandomChannel(BaseAgent):
+class FixChannel(BaseAgent):
     '''An agent that chooses a random channel and transmits over that channel.'''
 
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        self.load = int(ceil(params.N_agent * 1.0 / params.N_channel))
+        self.run_this_turn = self.id % self.load
     def act(self):
         '''Return an action for current state. Choose a random channel and
         transmit over that channel. If there are multiple of such channels,
         choose randomly.'''
-        super(RandomChannel, self).act()
+        super(self.__class__, self).act()
         
-        # choose a random channel
-        chan = random.randint(0, len(self.env.channels))
+        # choose channel by agent id
+        chan = self.id / self.load
         self.switch(chan)
+        # skip turns:
+        self.run_this_turn = (self.run_this_turn + 1) % self.load
+        if self.run_this_turn != 0:
+            return self.idle()
         # if there is traffic detected on the channel, stay idle
         if self.sense():
             return self.idle()
@@ -32,5 +40,5 @@ class RandomChannel(BaseAgent):
 
         if pkgs_to_send == 0:
             return self.idle()
-        # transmit with a random power choice
+            
         return self.transmit(random.choice(params.P_levels), pkgs_to_send)
