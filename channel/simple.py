@@ -5,7 +5,7 @@ from util import *
 
 c = 3e8 # speed of light
 
-class SimpleChannel():
+class SimpleChannel:
     def __init__(self, freq, transition_probs, good_noise, bad_noise):
         # channel frequency
         self.freq = freq
@@ -18,6 +18,7 @@ class SimpleChannel():
         
     def iterate(self):
         self.is_bad = rand() <= self.A[1,1] if self.is_bad else self.A[0,1]
+        self.noise = (self.bad_noise if self.is_bad else self.good_noise) * params.chan_bw
 
     def transmission_successes(self, power, bitrate, pkt_size, n_pkt, x, y):
         '''How many packets have been successfully transmitted?
@@ -34,18 +35,14 @@ class SimpleChannel():
         success_rate = exp(log1p(-self.berawgn(E_b)) * pkt_size)
         
         return int((rand(n_pkt) <= success_rate).sum())
-    
-    def noise(self):
-        '''Return noise power spectral density.'''
-        return (self.bad_noise if self.is_bad else self.good_noise) * params.chan_bw
 
     def capacity(self, P_tx):
-        return params.chan_bw * log2(1 + P_tx/self.noise())
+        return params.chan_bw * log2(1 + P_tx/self.noise)
     
     def berawgn(self, E_b):
         '''Get BER of channel by calculationg SNR. Assuming we're using
         DBPSK with AWGN.
         Arguments:
         E_b : Energy per bit'''
-        N_0 = self.bad_noise if self.is_bad else self.good_noise  # self.noise()
+        N_0 = self.bad_noise if self.is_bad else self.good_noise
         return 0.5 * exp(-(E_b / N_0))

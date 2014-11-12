@@ -1,18 +1,25 @@
 import numpy as np
 
-class SimpleTraffic():
-    def __init__(self):
-        self.q = np.array([1, 0]) if np.random.rand() > 0.5 else np.array([0, 1])
-        self.traffic_probs = [0.3, 0.7]
-        self.A = np.array([
-            [0.9, 0.1],
-            [0.4, 0.6]
-        ]).transpose()
+q0 = np.array([1, 0])
+q1 = np.array([0, 1])
+dq = q1 - q0
+A = A = np.array([
+    [0.9, 0.1],
+    [0.4, 0.6]
+]).transpose()
+traffic_probs = [0.3, 0.7]
 
+class SimpleTraffic:
+    
+    def __init__(self):
+        #self.q = np.array([1, 0]) if np.random.rand() > 0.5 else np.array([0, 1])
+        # is traffic state q_0?
+        # faster computation trick for HMM
+        self.q_0 = np.random.rand() > 0.5
+        
     def traffic_exists(self):
-        '''Generate traffic with an HMM'''
-        if np.random.rand() <= self.A.dot(self.q)[0]:
-            self.q = np.array([1, 0])
-        else:
-            self.q = np.array([0, 1])
-        return np.random.rand() <= self.q.dot(self.traffic_probs)
+        '''Generate traffic with HMM by making an iteration'''
+        # generate new state
+        self.q_0 = np.random.rand() <= (A[0, 0] if self.q_0 else A[1, 0])
+        # generate traffic
+        return np.random.rand() <= traffic_probs[0 if self.q_0 else 1] # the fastest way, chosen empirically

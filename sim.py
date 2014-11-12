@@ -67,6 +67,8 @@ bits_type = zeros([len(agent_types), t_total], dtype=int_)
 en_idle = zeros([len(agent_types), t_total])
 buf_overflow = zeros([len(agent_types), N_agent, t_total], dtype=int_)
 buf_levels = zeros([len(agent_types), N_agent, t_total], dtype=int_)
+init_positions = zeros([len(agent_types), N_runs, N_agent, 2])
+last_positions = zeros([len(agent_types), N_runs, N_agent, 2])
 
 def run_simulation(agent_type, agent_no):
     global avg_energies, en_type, avg_bits, bits_type, buf_overflow
@@ -77,10 +79,12 @@ def run_simulation(agent_type, agent_no):
     
     env = Environment(channels, traffics, pd=0.9, pf=0.1)
     print 'Agent type:', agent_type.__name__
-    # generate agents
-    agents = [agent_type(env, init_state(i)) for i in xrange(N_agent)]
-    env.set_agents(agents)
     for n_run in xrange(N_runs):
+        # generate agents
+        agents = [agent_type(env, init_state(i)) for i in xrange(N_agent)]
+        env.set_agents(agents)
+        
+        init_positions[agent_no, n_run] = [(a.x, a.y) for a in agents]
         energies = zeros([N_agent, t_total])
         bits = zeros([N_agent, t_total])
         if argv.verbose or not batch_run:
@@ -158,6 +162,7 @@ def run_simulation(agent_type, agent_no):
             print "%Collided channels:", rates[0]/(t_total*N_channel) * 100
             print
         
+        last_positions[agent_no, n_run] = [(a.x, a.y) for a in agents]
 
 for i, agent_type in enumerate(agent_types):
     run_simulation(agent_type, i)
@@ -233,3 +238,5 @@ save(os.path.join(output_dir, 'en_idle.npy'), en_idle)
 save(os.path.join(output_dir, 'en_type.npy'), en_type)
 save(os.path.join(output_dir, 'buf_overflow.npy'), buf_overflow)
 save(os.path.join(output_dir, 'buf_levels.npy'), buf_overflow)
+save(os.path.join(output_dir, 'init_positions.npy'), init_positions)
+save(os.path.join(output_dir, 'last_positions.npy'), last_positions)

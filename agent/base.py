@@ -2,7 +2,7 @@ import abc
 from numpy import *
 import params
 
-class BaseAgent():
+class BaseAgent:
     '''A base class for all actors'''
     __metaclass__ = abc.ABCMeta
     # speed of random walk (m/time_slot)
@@ -59,10 +59,12 @@ class BaseAgent():
         return self.env.detect_traffic(self.chan)
     
     def switch(self, chan):
-        if self.t_remaining < params.t_sw * abs(chan - self.chan):
+        d_spectral = abs(chan - self.chan)        
+        if self.t_remaining < params.t_sw * d_spectral:
             raise Exception('No time remained for switching from chan #%d to chan #%d' % (self.chan, chan))
-        self.E_slot += abs(chan - self.chan) * params.t_sw * params.P_sw
-        self.t_remaining -= params.t_sw * abs(chan - self.chan)   
+        
+        self.E_slot += d_spectral * params.t_sw * params.P_sw
+        self.t_remaining -= params.t_sw * d_spectral
         self.chan = chan
     
     def transmit(self, P_tx, n_pkg):
