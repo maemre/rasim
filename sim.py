@@ -78,7 +78,8 @@ def run_simulation(agent_type, agent_no):
     traffics = [SimpleTraffic() for i in xrange(N_channel)]
     
     env = Environment(channels, traffics, pd=0.9, pf=0.1)
-    print 'Agent type:', agent_type.__name__
+    if argv.verbose or not batch_run:
+        print 'Agent type:', agent_type.__name__
     for n_run in xrange(N_runs):
         # generate agents
         agents = [agent_type(env, init_state(i)) for i in xrange(N_agent)]
@@ -223,9 +224,9 @@ if not batch_run:
     P.title('Idle Energy vs Time')
     P.show()
 
-print "Throughput:"
-for i, agent_type in enumerate(agent_types):
-    print "\t%s:\t%f" % (agent_type.__name__, sum(bits_type[i]))
+    print "Throughput:"
+    for i, agent_type in enumerate(agent_types):
+        print "\t%s:\t%f" % (agent_type.__name__, sum(bits_type[i]))
 
 # save statistics
 
