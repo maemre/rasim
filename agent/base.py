@@ -59,12 +59,12 @@ class BaseAgent:
         return self.env.detect_traffic(self.chan)
     
     def switch(self, chan):
-        d_spectral = abs(chan - self.chan)        
-        if self.t_remaining < params.t_sw * d_spectral:
+        t_sw = params.t_sw * abs(chan - self.chan)        
+        if self.t_remaining < t_sw:
             raise Exception('No time remained for switching from chan #%d to chan #%d' % (self.chan, chan))
         
-        self.E_slot += d_spectral * params.t_sw * params.P_sw
-        self.t_remaining -= params.t_sw * d_spectral
+        self.E_slot += t_sw * params.P_sw
+        self.t_remaining -= t_sw
         self.chan = chan
     
     def transmit(self, P_tx, n_pkg):
@@ -76,7 +76,7 @@ class BaseAgent:
         self.t_remaining -= n_bits / bitrate
         self.E_slot += P_tx * n_bits / bitrate
         return {
-            'action': 'transmit',
+            'action': params.ACTION.TRANSMIT,
             'channel': self.chan,
             'power': P_tx,
             'pkt_size': params.pkg_size,
@@ -88,7 +88,7 @@ class BaseAgent:
         self.E_slot += params.P_idle * self.t_remaining
         self.t_remaining = 0
         return {
-            'action': 'idle'        
+            'action': params.ACTION.IDLE,   
         }
         
     def feedback(self, collision, success, idle=False, buf_overflow=False, N_pkt=0):

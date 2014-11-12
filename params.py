@@ -68,4 +68,8 @@ noise = {
 
 del np # do not export np
 
-prefix = "%d-%d-%d-%d-%d-%d-%d-%d" % (N_runs, t_total, N_agent, N_channel, N_good_channel, r_init, B, pkg_size)
+prefix = "%d-%d-%d-%d-%d-%d-%d-%f" % (N_runs, t_total, N_agent, N_channel, N_good_channel, B, pkg_size, argv.beta_idle)
+
+# constants to be used instead of strings
+class ACTION:
+    TRANSMIT, IDLE = range(2)

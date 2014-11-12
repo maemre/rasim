@@ -104,7 +104,7 @@ def run_simulation(agent_type, agent_no):
             collisions = [N_agent if traffic else -1 for traffic in env.t_state]
             collided = [False] * N_agent
             for i, a in enumerate(actions):
-                if a['action'] == 'transmit':
+                if a['action'] == ACTION.TRANSMIT:
                     if collisions[a['channel']] == N_agent:
                         # collision with PU, mark agent as collided
                         collided[i] = True
@@ -125,14 +125,14 @@ def run_simulation(agent_type, agent_no):
                 
                 act = actions[i]
                 # send feedback to idle agents too
-                if act['action'] == 'idle':
+                if act['action'] == ACTION.IDLE:
                     a.feedback(False, False, idle=True)
                 # if collision occurred, report collusion
                 if collided[i]:
                     a.feedback(collision=True, success=False)
                     rates[0] += 1
                     continue
-                if act['action'] != 'transmit':
+                if act['action'] != ACTION.TRANSMIT:
                     rates[3] += 1
                     en_idle[agent_no, t] += a.E_slot
                     continue
