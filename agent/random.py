@@ -24,8 +24,8 @@ class RandomChannel(BaseAgent):
         # if there is traffic detected on the channel, stay idle
         if self.sense():
             return self.idle()
-
-        pkgs_to_send = int((self.t_remaining * params.bitrate) / params.pkg_size)
+        P_tx = random.choice(params.P_levels)
+        pkgs_to_send = int((self.t_remaining * self.env.channels[chan].capacity(P_tx)) / params.pkg_size)
 
         if self.B - self.B_empty < pkgs_to_send:
             pkgs_to_send = self.B - self.B_empty
@@ -33,4 +33,4 @@ class RandomChannel(BaseAgent):
         if pkgs_to_send == 0:
             return self.idle()
         # transmit with a random power choice
-        return self.transmit(random.choice(params.P_levels), pkgs_to_send)
+        return self.transmit(P_tx, pkgs_to_send)

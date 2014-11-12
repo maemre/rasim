@@ -20,13 +20,14 @@ class OptHighestSNR(BaseAgent):
         if isinf(min_noise):
             return self.idle()
         # get minimum noised channels
-        min_noises = fromiter((i for i, c in enumerate(ch) if not self.env.t_state[i] and c.noise() / min_noise < 1e9), int)
+        min_noises = fromiter((i for i, c in enumerate(ch) if not self.env.t_state[i] and c.noise() <= min_noise), int)
         # choose a random channel among them, and switch that channel
         chan = random.choice(min_noises)
         self.switch(chan)
         self.sense()
+        P_tx = params.P_levels[-1]
         # send remaining packets in buffer
-        pkgs_to_send = int((self.t_remaining * params.bitrate) / params.pkg_size)
+        pkgs_to_send = int((self.t_remaining * self.env.channels[chan].capacity(P_tx)) / params.pkg_size)
 
         if self.B - self.B_empty < pkgs_to_send:
             pkgs_to_send = self.B - self.B_empty
@@ -34,4 +35,4 @@ class OptHighestSNR(BaseAgent):
         if pkgs_to_send == 0:
             return self.idle()
             
-        return self.transmit(params.P_tx, pkgs_to_send)
+        return self.transmit(P_tx, pkgs_to_send)

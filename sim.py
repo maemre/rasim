@@ -12,9 +12,14 @@ from environment import Environment
 import os
 # simulation parameters:
 from params import *
+from args import argv
 
 # create data-output directory
-output_dir = os.path.join('../data/', prefix)
+output_dir = os.path.join(argv.output_dir, prefix)
+try:
+    os.mkdir(argv.output_dir)
+except OSError:
+    pass
 try:
     os.mkdir(output_dir)
 except OSError:
@@ -37,7 +42,14 @@ def init_state(i):
     theta = random.rand()*2*pi
     return {'state': (random.randint(0, N_channel), random.randint(0, B)), 'x': r*cos(theta), 'y':r*sin(theta), 'id': i}
 
-agent_types = [RandomChannel, IndividualQ, OptHighestSNR] # + [FixChannel, OptHighestSNR]
+if argv.agents is None:
+    print 'No agent type is specified. Simulation cannot run. For details run rasim with "--help" option'
+    exit(1)
+
+agent_types = []
+for i in [RandomChannel, IndividualQ, OptHighestSNR]: # + [FixChannel, OptHighestSNR]
+    if i.__name__ in argv.agents:
+        agent_types.append(i)
 
 paths = {}
 for a in agent_types:
@@ -54,8 +66,9 @@ avg_bits = zeros([len(agent_types), N_agent, t_total])
 bits_type = zeros([len(agent_types), t_total], dtype=int_)
 en_idle = zeros([len(agent_types), t_total])
 buf_overflow = zeros([len(agent_types), N_agent, t_total], dtype=int_)
+buf_levels = zeros([len(agent_types), N_agent, t_total], dtype=int_)
 
-def run_simulation(agent_type):
+def run_simulation(agent_type, agent_no):
     global avg_energies, en_type, avg_bits, bits_type, buf_overflow
     # channels themselves
     channels = [gen_chan(i) for i in xrange(N_channel)]
@@ -70,15 +83,17 @@ def run_simulation(agent_type):
     for n_run in xrange(N_runs):
         energies = zeros([N_agent, t_total])
         bits = zeros([N_agent, t_total])
-        print "Run #%d" % n_run
+        if argv.verbose or not batch_run:
+            print "Run #%d of %d(agent), %d of %d(total)" % (n_run + 1, N_runs, n_run + agent_no * N_runs + 1, N_runs * len(agent_types))
         rates = [0,0,0,0,0]
         for t in xrange(t_total):
             env.next_slot()
             # get actions
             actions = [a.act_then_idle() for a in agents]
-            # collect statistics for buffer overflow
+            # collect statistics for buffer overflow and buffer levels
             for i, a in enumerate(agents):
-                buf_overflow[agent_types.index(agent_type), i, t] = a.buf_overflow
+                buf_overflow[agent_no, i, t] = int(a.buf_overflow)
+                buf_levels[agent_no, i, t] += B - a.B_empty
             # collisions per channel where,
             # N_agent: PU collision, (0..N_agent-1): SU collision with ID
             # -1: No collision
@@ -102,7 +117,7 @@ def run_simulation(agent_type):
             for i, a in enumerate(agents):
                 # collect energy usage statistics
                 energies[i, t] = a.E_slot
-                en_type[agent_types.index(agent_type), t] += a.E_slot
+                en_type[agent_no, t] += a.E_slot
                 
                 act = actions[i]
                 # send feedback to idle agents too
@@ -115,39 +130,39 @@ def run_simulation(agent_type):
                     continue
                 if act['action'] != 'transmit':
                     rates[3] += 1
-                    en_idle[agent_types.index(agent_type), t] += a.E_slot
+                    en_idle[agent_no, t] += a.E_slot
                     continue
                 ch = env.channels[act['channel']]
                 # no collision, check transmission success by channel quality
                 pkt_sent = ch.transmission_successes(act['power'], act['bitrate'], act['pkt_size'], act['n_pkt'], a.x, a.y)
-                # give per-packet feedback
-                for _ in xrange(pkt_sent):                
-                    a.feedback(collision=False, success=True)
-                for _ in xrange(act['n_pkt'] - pkt_sent):                
+                # give feedback      
+                if pkt_sent == 0:
                     a.feedback(collision=False, success=False)
-                rates[1] += pkt_sent
+                else:
+                    a.feedback(collision=False, success=True, N_pkt=pkt_sent)
+                rates[1] += pkt_sent * 1.0 / act['n_pkt']
                 rates[2] += act['n_pkt'] - pkt_sent
                 # collect bit transmission statistics
                 bits[i, t] = pkt_sent * act['pkt_size']
-                bits_type[agent_types.index(agent_type), t] += pkt_sent * act['pkt_size']
+                bits_type[agent_no, t] += pkt_sent * act['pkt_size']
         # save energies
         #savetxt('energy_%d.txt' % n_run, energies)
         # take averages
-        avg_energies[agent_types.index(agent_type)] = energies
-        avg_bits[agent_types.index(agent_type)] = bits
+        avg_energies[agent_no] += energies
+        avg_bits[agent_no] += bits
         # print stats
         rates[4] = rates[4] / (t_total * N_channel) * 100
-        if not batch_run:        
-            print "Collisions: %d\nSuccesses: %d\nLost in Channel: %d\nIdle: %d\n%%PU Collisions: %f" % tuple(rates)
+        if argv.verbose or not batch_run:        
+            print "Collisions: %d\nSuccesses: %f\nLost in Channel: %d\nIdle: %d\n%%PU Collisions: %f" % tuple(rates)
             print "%Success:", rates[1]/(t_total*N_agent - rates[3]) * 100
             print "%Collided channels:", rates[0]/(t_total*N_channel) * 100
             print
         
 
-for agent_type in agent_types:
-    run_simulation(agent_type)
+for i, agent_type in enumerate(agent_types):
+    run_simulation(agent_type, i)
 
-
+buf_levels /= N_runs
 avg_energies /= N_runs
 avg_bits /= N_runs
 en_idle /= N_runs
@@ -179,8 +194,19 @@ if not batch_run:
     P.legend()
     P.xlabel('Agent Type')
     P.ylabel('# of buffer overflows (avg, per agent)')
-    P.xticks(arange(N_agent), [x.__name__ for x in agent_types])
+    P.xticks(arange(len(agent_types) + 1), [x.__name__ for x in agent_types] + [''])
     P.title('Buffer overflows vs Agent Type')
+    
+    P.figure()
+    
+    for i, agent_type in enumerate(agent_types):
+        P.plot(buf_levels[i].sum(axis=0)/(N_agent*1.0), label=agent_type.__name__)
+    
+    P.legend()
+    P.xlabel('Time (time slots)')
+    P.ylabel('buffer occupancy')
+    P.title('Buffer Occupancy (avg) vs Time')
+    
     P.figure()
     
     for i, agent_type in enumerate(agent_types):
@@ -191,10 +217,10 @@ if not batch_run:
     P.ylabel('Avg Idle Energy (cumulative)')
     P.title('Idle Energy vs Time')
     P.show()
-    print "Throughput:"
-    for i, agent_type in enumerate(agent_types):
-        print "\t%s:\t%f" % (agent_type.__name__, sum(bits_type[i]))
 
+print "Throughput:"
+for i, agent_type in enumerate(agent_types):
+    print "\t%s:\t%f" % (agent_type.__name__, sum(bits_type[i]))
 
 # save statistics
 
@@ -206,3 +232,4 @@ save(os.path.join(output_dir, 'avg_bits.npy'), avg_bits)
 save(os.path.join(output_dir, 'en_idle.npy'), en_idle)
 save(os.path.join(output_dir, 'en_type.npy'), en_type)
 save(os.path.join(output_dir, 'buf_overflow.npy'), buf_overflow)
+save(os.path.join(output_dir, 'buf_levels.npy'), buf_overflow)

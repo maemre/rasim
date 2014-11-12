@@ -6,7 +6,7 @@ class BaseAgent():
     '''A base class for all actors'''
     __metaclass__ = abc.ABCMeta
     # speed of random walk (m/time_slot)
-    speed = 5
+    speed = 30. / 3.6 * params.t_slot # 30 kph
 
     def __init__(self, env, s0):
         '''Initialize actor using environment and initial state'''
@@ -24,8 +24,9 @@ class BaseAgent():
     def fill_buffer(self):
         pkgs = random.randint(params.pkg_min, params.pkg_max+1)
         if pkgs > self.B_empty:
-            #print "Buffer overflow at agent ", self.id
             self.buf_overflow = True
+            self.feedback(collision=False, success=False, buf_overflow=True)
+            self.B_empty = 0
         else:
             self.buf_overflow = False            
             self.B_empty -= pkgs
@@ -67,17 +68,18 @@ class BaseAgent():
     def transmit(self, P_tx, n_pkg):
         self.n_pkg_slot = n_pkg
         n_bits = n_pkg * params.pkg_size
-        if self.t_remaining < n_bits / params.bitrate:
+        bitrate = self.env.channels[self.chan].capacity(P_tx)
+        if self.t_remaining < n_bits / bitrate:
             raise Exception('No time remained for transmitting %d bits with bitrate %f' % (n_bits, bitrate))
-        self.t_remaining -= n_bits / params.bitrate
-        self.E_slot += P_tx * n_bits / params.bitrate
+        self.t_remaining -= n_bits / bitrate
+        self.E_slot += P_tx * n_bits / bitrate
         return {
             'action': 'transmit',
             'channel': self.chan,
             'power': P_tx,
             'pkt_size': params.pkg_size,
             'n_pkt': n_pkg,
-            'bitrate': params.bitrate
+            'bitrate': bitrate
         }
     
     def idle(self):
@@ -87,18 +89,16 @@ class BaseAgent():
             'action': 'idle'        
         }
         
-    def feedback(self, collision, success, idle=False):
-        if idle:
+    def feedback(self, collision, success, idle=False, buf_overflow=False, N_pkt=0):
+        if idle or buf_overflow:
             return
         if success:
-            self.B_empty += 1
+            self.B_empty += N_pkt
         if self.B_empty > self.B:
+            raise Exception("Error in simulation, buffer is underflown")
             self.B_empty = self.B
     
     def act_then_idle(self):
         a = self.act()
         self.idle()
         return a
-    
-    def calculate_bitrate(self, P_tx, ch):
-        return params.chan_bw * log2(1 + P_tx / self.env.channels[ch].noise())

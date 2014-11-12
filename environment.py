@@ -6,14 +6,17 @@ class Environment():
         self.traffics = traffics
         self.pd = pd
         self.pf = pf
+        self.t = 0
 
     def set_agents(self, agents):
         self.agents = agents
+        self.t = 0
 
     def next_slot(self):
         for c in self.channels:
             c.iterate()
         self.t_state = [t.traffic_exists() for t in self.traffics]
+        self.t += 1
 
     def detect_traffic(self, chan):
         '''Detect channel chan'''

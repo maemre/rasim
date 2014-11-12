@@ -1,5 +1,5 @@
 from numpy.random import rand
-from numpy import sqrt, exp, pi, log1p, log
+from numpy import sqrt, exp, pi, log1p, log, log2
 import params
 from util import *
 
@@ -33,11 +33,14 @@ class SimpleChannel():
         E_b = P_r * t / pkt_size
         success_rate = exp(log1p(-self.berawgn(E_b)) * pkt_size)
         
-        return (rand(n_pkt) <= success_rate).sum()
+        return int((rand(n_pkt) <= success_rate).sum())
     
     def noise(self):
         '''Return noise power spectral density.'''
         return (self.bad_noise if self.is_bad else self.good_noise) * params.chan_bw
+
+    def capacity(self, P_tx):
+        return params.chan_bw * log2(1 + P_tx/self.noise())
     
     def berawgn(self, E_b):
         '''Get BER of channel by calculationg SNR. Assuming we're using
