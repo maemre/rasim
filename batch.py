@@ -21,8 +21,8 @@ import sys
 output_dir = 'data'
 
 N_runs = 30
-t_total = 6000
-N_agents = [5, 10, 50]
+t_total = 12000
+N_agents = [5, 10, 20]
 N_good_channels = [2, 5, 8]
 buffer_levels = [2, 4, 10]
 buffer_size = 1024
