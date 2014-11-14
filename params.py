@@ -17,6 +17,8 @@ N_runs = argv.N_runs
 t_total = argv.t_total
 # total number of agents
 N_agent = argv.n_agent
+# number of stationary agents
+N_stationary_agent = argv.n_stationary if argv.n_stationary else (N_agent / 2)
 # number of channels
 N_channel = 10
 # number of good channels
