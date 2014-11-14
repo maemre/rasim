@@ -1,6 +1,6 @@
 from numpy.random import *
 
-class Environment():
+class Environment(object):
     def __init__(self, channels, traffics, pd, pf):
         self.channels = channels
         self.traffics = traffics

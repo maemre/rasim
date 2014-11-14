@@ -9,7 +9,7 @@ A = A = np.array([
 ]).transpose()
 traffic_probs = [0.3, 0.7]
 
-class SimpleTraffic:
+class SimpleTraffic(object):
     
     def __init__(self):
         #self.q = np.array([1, 0]) if np.random.rand() > 0.5 else np.array([0, 1])

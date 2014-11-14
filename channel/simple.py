@@ -5,7 +5,7 @@ from util import *
 
 c = 3e8 # speed of light
 
-class SimpleChannel:
+class SimpleChannel(object):
     def __init__(self, freq, transition_probs, good_noise, bad_noise):
         # channel frequency
         self.freq = freq

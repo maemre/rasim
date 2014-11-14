@@ -2,7 +2,7 @@ import abc
 from numpy import *
 import params
 
-class BaseAgent:
+class BaseAgenti(object):
     '''A base class for all actors'''
     __metaclass__ = abc.ABCMeta
     # speed of random walk (m/time_slot)
