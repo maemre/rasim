@@ -19,7 +19,7 @@ class BaseAgent(object):
         self.B_empty = self.B
         self.buf_overflow = False
         # speed of random walk (m/time_slot)
-        self.speed = s0.get('speed', 30. / 3.6 * params.t_slot) # 30 kph
+        self.speed = s0['speed']
 
     def fill_buffer(self):
         pkgs = random.randint(params.pkg_min, params.pkg_max+1)

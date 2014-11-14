@@ -40,7 +40,13 @@ def init_state(i):
     # disk point picking - http://mathworld.wolfram.com/DiskPointPicking.html
     r = sqrt(random.rand())*r_init
     theta = random.rand()*2*pi
-    return {'state': (random.randint(0, N_channel), random.randint(0, B)), 'x': r*cos(theta), 'y':r*sin(theta), 'id': i}
+    return {
+        'state': (random.randint(0, N_channel), random.randint(0, B)),
+        'x': r*cos(theta),
+        'y':r*sin(theta),
+        'id': i,
+        'speed': 0 if i < N_stationary_agent else 30. / 3.6 * t_slot # 30 kph
+    }
 
 if argv.agents is None:
     print 'No agent type is specified. Simulation cannot run. For details run rasim with "--help" option'
