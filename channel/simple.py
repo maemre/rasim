@@ -6,6 +6,7 @@ from util import *
 c = 3e8 # speed of light
 
 class SimpleChannel(object):
+    __slots__ = ['freq', 'good_noise', 'bad_noise', 'A', 'is_bad', 'noise']
     def __init__(self, freq, transition_probs, good_noise, bad_noise):
         # channel frequency
         self.freq = freq

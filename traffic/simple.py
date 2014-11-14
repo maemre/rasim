@@ -10,7 +10,9 @@ A = A = np.array([
 traffic_probs = [0.3, 0.7]
 
 class SimpleTraffic(object):
-    
+    # fix slots to make access fast
+
+    __slots__ = ['q_0']
     def __init__(self):
         #self.q = np.array([1, 0]) if np.random.rand() > 0.5 else np.array([0, 1])
         # is traffic state q_0?
