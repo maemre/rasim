@@ -64,7 +64,10 @@ avg_energies = zeros([len(agent_types), N_agent, t_total])
 en_type = zeros([len(agent_types), t_total])
 avg_bits = zeros([len(agent_types), N_agent, t_total])
 bits_type = zeros([len(agent_types), t_total], dtype=int_)
-en_idle = zeros([len(agent_types), t_total])
+en_idle = zeros([len(agent_types), N_agent, t_total])
+en_sense = zeros([len(agent_types), N_agent, t_total])
+en_sw = zeros([len(agent_types), N_agent, t_total])
+en_tx = zeros([len(agent_types), N_agent, t_total])
 buf_overflow = zeros([len(agent_types), N_agent, t_total], dtype=int_)
 buf_levels = zeros([len(agent_types), N_agent, t_total], dtype=int_)
 init_positions = zeros([len(agent_types), N_runs, N_agent, 2])
@@ -123,6 +126,10 @@ def run_simulation(agent_type, agent_no):
                 # collect energy usage statistics
                 energies[i, t] = a.E_slot
                 en_type[agent_no, t] += a.E_slot
+                en_idle[agent_no, i, t] += a.E_idle
+                en_sense[agent_no, i, t] += a.E_sense
+                en_tx[agent_no, i, t] += a.E_tx
+                en_sw[agent_no, i, t] += a.E_sw
                 
                 act = actions[i]
                 # send feedback to idle agents too
@@ -135,7 +142,6 @@ def run_simulation(agent_type, agent_no):
                     continue
                 if act['action'] != ACTION.TRANSMIT:
                     rates[3] += 1
-                    en_idle[agent_no, t] += a.E_slot
                     continue
                 ch = env.channels[act['channel']]
                 # no collision, check transmission success by channel quality
@@ -172,6 +178,9 @@ buf_levels /= N_runs
 avg_energies /= N_runs
 avg_bits /= N_runs
 en_idle /= N_runs
+en_sense /= N_runs
+en_tx /= N_runs
+en_sw /= N_runs
 
 # give outputs
 if not batch_run:
@@ -216,7 +225,7 @@ if not batch_run:
     P.figure()
     
     for i, agent_type in enumerate(agent_types):
-        P.plot(cumsum(en_idle[i]), label=agent_type.__name__)
+        P.plot(cumsum(en_idle[i].sum(axis=0) / N_agent), label=agent_type.__name__)
     
     P.legend()
     P.xlabel('Time (time slots)')
@@ -236,6 +245,9 @@ with open(os.path.join(output_dir, 'agents.txt'), 'w') as f:
 save(os.path.join(output_dir, 'avg_energies.npy'), avg_energies)
 save(os.path.join(output_dir, 'avg_bits.npy'), avg_bits)
 save(os.path.join(output_dir, 'en_idle.npy'), en_idle)
+save(os.path.join(output_dir, 'en_sense.npy'), en_sense)
+save(os.path.join(output_dir, 'en_tx.npy'), en_tx)
+save(os.path.join(output_dir, 'en_sw.npy'), en_sw)
 save(os.path.join(output_dir, 'en_type.npy'), en_type)
 save(os.path.join(output_dir, 'buf_overflow.npy'), buf_overflow)
 save(os.path.join(output_dir, 'buf_levels.npy'), buf_overflow)
