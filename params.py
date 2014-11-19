@@ -41,10 +41,10 @@ pkg_max = argv.max_packet_rate # pkg / slot, inclusive
 
 # Power
 P_tx = 200e-3 # W
-P_levels = [0.75*P_tx, P_tx, 2*P_tx]
+P_levels = [0.5*P_tx, 0.75*P_tx, P_tx, 2*P_tx]
 P_sense = 0.5*P_tx
 P_sw = 0.5*P_tx
-P_idle = 0.1*P_tx
+P_idle = 0.2*P_tx
 P_rec = 40 # W
 
 # durations
@@ -65,12 +65,12 @@ noise = {
     # overall worse channels
     'bad': {'good_noise': to_dbm(P_tx/chan_bw) - 65, 'bad_noise': to_dbm(P_tx/chan_bw) - 55, 'transition_probs': chan_trans_prob}, # Noise power density (dBm) x2, probability
     # overall better channels
-    'good': {'good_noise': -174, 'bad_noise': to_dbm(P_tx/chan_bw) - 60, 'transition_probs': chan_trans_prob}, # Noise power density (dBm) x2, probability
+    'good': {'good_noise': -174, 'bad_noise': to_dbm(P_tx/chan_bw) - 70, 'transition_probs': chan_trans_prob}, # Noise power density (dBm) x2, probability
 }
 
 del np # do not export np
 
-prefix = "%d-%d-%d-%d-%d-%d-%d-%f" % (N_runs, t_total, N_agent, N_channel, N_good_channel, B, pkg_size, argv.beta_idle)
+prefix = "%d-%d-%d-%d-%d-%d-%d-%f" % (N_runs, t_total, N_agent, N_channel, N_good_channel, argv.buffer_levels, pkg_size, argv.beta_idle)
 
 # constants to be used instead of strings
 class ACTION:

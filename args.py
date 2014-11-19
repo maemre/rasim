@@ -25,7 +25,7 @@ parser.add_argument('--buffer-levels', action='store', default=10, help='# of bu
 parser.add_argument('--packet-size', action='store', default=1024, help='size of a packet, default: 1024 bits', type=int)
 parser.add_argument('--min-packet-rate', action='store', default=0, help='minimum packet rate per timeslot per agent, default = 0', type=int)
 parser.add_argument('--max-packet-rate', action='store', default=6, help='maximum packet rate per timeslot per agent, default = 6', type=int)
-parser.add_argument('--beta-idle', action='store', default=4, help='cost coefficient of staying idle for Q Learning default = 4', type=float)
+parser.add_argument('--beta-idle', action='store', default=10, help='cost coefficient of staying idle for Q Learning default = 4', type=float)
 
 parser.add_argument('--verbose', action='store_true', help='increase verbosity, give statistics about each run')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s 2.0')

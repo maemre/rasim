@@ -11,14 +11,14 @@ import params
 
 # parameters
 
-B = 10 # buffer levels
+B = params.argv.buffer_levels # buffer levels
 B_lvl_size = params.B / (B - 1) if params.B % (B - 1) else params.B / B + 1
 beta_overflow = 1000
 beta_idle = params.argv.beta_idle # coefficient cost of staying idle
-beta_md = 0.4 # misdetection punishment coefficient
-beta_loss = 1 # punishment for data loss in channel
+beta_md = 1 # misdetection punishment coefficient
+beta_loss = 4 # punishment for data loss in channel
 eps = 0.03 # exploration probability
-discount = 0.1 # discount factor, gamma
+discount = 0.2 # discount factor, gamma
 N_P_levels = len(params.P_levels)
 
 class IndividualQ(BaseAgent):
@@ -92,7 +92,7 @@ class IndividualQ(BaseAgent):
     
     def alpha(self):
         "Learning rate, decreasing over time"
-        return 0.2 + 0.8 / (1. + self.visit[self.state[0], self.state[1], self.a])
+        return 0.1 + 0.9 / (1. + self.visit[self.state[0], self.state[1], self.a])
     
     def feedback(self, collision, success, idle=False, buf_overflow=False, N_pkt=0):
         super(self.__class__, self).feedback(collision, success, idle, buf_overflow, N_pkt)
