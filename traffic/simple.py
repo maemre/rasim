@@ -3,7 +3,7 @@ import numpy as np
 q0 = np.array([1, 0])
 q1 = np.array([0, 1])
 dq = q1 - q0
-A = A = np.array([
+A = np.array([
     [0.9, 0.1],
     [0.4, 0.6]
 ]).transpose()
