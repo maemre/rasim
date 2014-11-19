@@ -78,6 +78,15 @@ buf_overflow = zeros([len(agent_types), N_agent, t_total], dtype=int_)
 buf_levels = zeros([len(agent_types), N_agent, t_total], dtype=int_)
 init_positions = zeros([len(agent_types), N_runs, N_agent, 2])
 last_positions = zeros([len(agent_types), N_runs, N_agent, 2])
+#############
+# Arrays below are reused for each agent type and their values are saved per agent ype for
+# small memory footprint!!
+#############
+# Channel traffic record. 0 = no traffic, 1 = PU traffic
+channel_traf = zeros([N_channel, N_runs, t_total], dtype=int_)
+# Agent transmission record. 0..N_channel-1 = transimt over given channel, N_channel = idle
+# a huge matrix indeed
+transmissions = zeros([N_runs, N_agent, t_total])
 
 def run_simulation(agent_type, agent_no):
     global avg_energies, en_type, avg_bits, bits_type, buf_overflow
@@ -102,6 +111,7 @@ def run_simulation(agent_type, agent_no):
         rates = [0,0,0,0,0]
         for t in xrange(t_total):
             env.next_slot()
+            channel_traf[:,n_run,t] = env.t_state
             # get actions
             actions = [a.act_then_idle() for a in agents]
             # collect statistics for buffer overflow and buffer levels
@@ -125,6 +135,9 @@ def run_simulation(agent_type, agent_no):
                     else:
                         # no collision *yet*
                         collisions[a['channel']] = i
+                    transmissions[n_run, i, t] = a['channel']
+                else:
+                    transmissions[n_run, i, t] = N_channel
             
             # For each agent compute transmission successes and report
             # transmission success/failure to agent
@@ -176,6 +189,9 @@ def run_simulation(agent_type, agent_no):
             print
         
         last_positions[agent_no, n_run] = [(a.x, a.y) for a in agents]
+        # save statistics
+        save(os.path.join(output_dir, agent_type.__name__, 'channel_traf.npy'), channel_traf)
+        save(os.path.join(output_dir, agent_type.__name__, 'transmissions.npy'), transmissions)
 
 for i, agent_type in enumerate(agent_types):
     run_simulation(agent_type, i)
