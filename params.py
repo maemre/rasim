@@ -20,7 +20,7 @@ N_agent = argv.n_agent
 # number of stationary agents
 N_stationary_agent = argv.n_stationary if argv.n_stationary else (N_agent / 2)
 # number of channels
-N_channel = 10
+N_channel = argv.n_channel
 # number of good channels
 N_good_channel = argv.n_good_channel
 # radius of initial map
