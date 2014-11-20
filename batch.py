@@ -22,8 +22,9 @@ output_dir = 'data'
 
 N_runs = 30
 t_total = 12000
-N_agents = [1, 5, 10, 20]
-N_good_channels = [2, 5, 8]
+N_agents = [1, 5, 10]
+N_channel = 5
+N_good_channels = [1, 2, 4, 5]
 buffer_levels = [2, 4, 10]
 buffer_size = 512
 packet_size = 1024
@@ -39,9 +40,9 @@ for N_agent in N_agents:
         for buffer_level in buffer_levels:
             for beta_idle in beta_idles:
                 processes.append(('python sim.py --N-runs %d --t-total %d --individual-q --random-channel\
-                --highest-snr --output-dir %s --n-agent %d --n-good-channel %d --buffer-levels %d --buffer-size %d\
+                --highest-snr --output-dir %s --n-agent %d --n-channel %d --n-good-channel %d --buffer-levels %d --buffer-size %d\
                 --batch-run --packet-size %d --min-packet-rate %d --max-packet-rate %d --beta-idle %d' % (
-                    N_runs, t_total, output_dir, N_agent, N_good_channel, buffer_level, buffer_size, packet_size,
+                    N_runs, t_total, output_dir, N_agent, N_channel, N_good_channel, buffer_level, buffer_size, packet_size,
                     min_packet_rate, max_packet_rate, beta_idle
                 )).split())
 
